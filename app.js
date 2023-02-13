@@ -37,8 +37,10 @@ app.use(function(req, res, next){
 
     // make user session data available from within view templates
     res.locals.user = req.session.user
+    res.locals.reqPath = ''
 
     // make all error and success flash messages avilable from all templates
+    res.locals.appName = 'Facelessbook'
     res.locals.errors = req.flash('errors')
     res.locals.success = req.flash('success')
 
@@ -78,12 +80,26 @@ io.use(function(socket, next) {
 io.on('connection', function(socket) {
     if(socket.request.session.user) {
         let user = socket.request.session.user
+        socket.username = user.username
 
         socket.emit('welcome', {username: user.username, avatar: user.avatar})
 
-        socket.on('chatMessageFromBrowser', function(data) {
-            socket.broadcast.emit('chatMessageFromServer', {message: sanitizeHTML(data.message, {allowedTags: [], allowedAttributes: []}), username: user.username, avatar: user.avatar})
-        } )
+        socket.on('chatMessageFromBrowser', async function(data) {
+            let to = data.to
+            if(to == 'all') { 
+                socket.broadcast.emit('chatMessageFromServer', {message: sanitizeHTML(data.message, {allowedTags: [], allowedAttributes: []}), username: user.username, avatar: user.avatar}) 
+            } else {
+                if(typeof(to) == 'string') to = [to]
+                // console.log(to)
+                let allSockets = await io.fetchSockets()
+                let toSockets = allSockets.filter(s => {
+                    if(s.username == socket.username) {return false}
+                    let included = false
+                    to.forEach(toUsername => {if(toUsername == s.username) {included=true}})
+                    return included
+                })
+                toSockets.forEach((s) => s.emit('chatMessageFromServer', {message: sanitizeHTML(data.message, {allowedTags: [], allowedAttributes: []}), username: user.username, avatar: user.avatar}) )
+            }} )
     }
 })
 
