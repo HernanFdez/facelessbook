@@ -32,24 +32,24 @@ Post.prototype.validate = function() {
     if(this.data.body =='') {this.errors.push('you must provide post content')}
 }
 
-Post.prototype.create = function() {
-    return new Promise((resolve, reject) => {
-        this.cleanUp()
-        this.validate()
+Post.prototype.create = async function() {
+    this.cleanUp()
+    this.validate()
 
-        if(!this.errors.length) {
-            // save post into DB
-            postCollection.insertOne(this.data).then((info) => {
-                resolve(info.insertedId)
-            }).catch(() => {
-                this.errors.push('please try again later') 
-                reject(this.errors)
-            })
-        } else {
-            reject(this.errors)
+    if(!this.errors.length) {
+        // save post into DB
+        try {
+            const info = await postCollection.insertOne(this.data)
+            return(info.insertedId)
+        } catch(err) {
+            this.errors.push('please try again later') 
+            throw(this.errors)
         }
-    })
+    } else {
+        throw(this.errors)
+    }
 }
+
 
 Post.prototype.update = function() {
     return new Promise( async (resolve, reject) => {
