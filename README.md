@@ -9,4 +9,4 @@ Just a learning toy app intented to function as a simple social network where us
 - follow them to see their posts in the feed
 - chat privately or publicly. 
 
-* * __Hope you enjoy it!__ * *
+*__Hope you enjoy it!__*
